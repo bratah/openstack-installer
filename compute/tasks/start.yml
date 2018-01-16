@@ -1,0 +1,7 @@
+- name: Restart all services
+  systemd: name={{ item }} state=restarted
+  with_items:
+    - libvirtd.service
+    - openstack-nova-compute.service
+    - neutron-linuxbridge-agent.service
+    - openstack-nova-compute.service

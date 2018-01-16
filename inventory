@@ -1,0 +1,8 @@
+[controllers]
+controller ansible_ssh_host=10.10.64.103 controller_id=1 ansible_ssh_pass=changeme
+[computes]
+compute ansible_ssh_host=10.10.64.235 compute_id=1 ansible_ssh_pass=changeme
+
+[ha-mode]
+controller1 ansible_ssh_host=10.10.64.103 controller_id=1 ansible_ssh_pass=changeme
+controller2 ansible_ssh_host=10.10.64.235 controller_id=2 ansible_ssh_pass=changeme

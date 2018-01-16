@@ -1,0 +1,51 @@
+
+# Compute
+
+- name: create the database for compute
+  mysql_db: name={{ item }} state=present
+  with_items:
+    - nova_api
+    - nova
+- name: Grant permission to compute DB
+  mysql_user: name={{ item }} host=controller password={{ nova_db_pass }} priv="*.*:ALL,GRANT" state=present
+  with_items:
+    - nova_api
+    - nova
+- name: Register Nova to openstack
+  shell: openstack {{ item }}
+  with_items:
+    - user create --domain default --password {{ nova_user_pass }} nova
+    - role add --project service --user nova admin
+    - service create --name nova --description "OpenStack Compute" compute
+    - endpoint create --region {{ region_one }} compute public http://controller:8774/v2.1/%\(tenant_id\)s
+    - endpoint create --region {{ region_one }} compute internal http://controller:8774/v2.1/%\(tenant_id\)s
+    - endpoint create --region {{ region_one }} compute admin http://controller:8774/v2.1/%\(tenant_id\)s
+  environment: "{{ adminrc }}"
+  ignore_errors: True
+
+- name: Install Nova apckages
+  yum: name={{ item }}
+  with_items:
+    - openstack-nova-api
+    - openstack-nova-conductor
+    - openstack-nova-console
+    - openstack-nova-novncproxy
+    - openstack-nova-scheduler
+- name: Copy /etc/nova/nova.conf
+  template: src=../templates/nova.conf dest=/etc/nova/nova.conf
+#- name: Setting permissions for /var/log/nova/
+#  command: chown -R nova. /var/log/nova/
+- name: Populate the nova DB
+  command: sh -c "{{ item }}" nova
+  with_items:
+    - nova-manage api_db sync
+    - nova-manage db sync
+- name: Start and Enable nova services
+  systemd: name={{ item }} enabled=yes state=started
+  with_items:
+    - openstack-nova-api.service
+    - openstack-nova-consoleauth.service
+    - openstack-nova-scheduler.service
+    - openstack-nova-conductor.service
+    - openstack-nova-novncproxy.service
+
